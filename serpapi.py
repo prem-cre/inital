@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-SERPAPI_KEY = os.getenv("SERPAPI_KEY")
+SERPAPI_KEY = os.getenv("ce3b84871170b590f3430860428afa0764422d8ad61ea6bc9ad3554d4c82ba39")
 
 def fetch_jobs_from_serpapi(query, location="India", limit=10):
     url = "https://serpapi.com/search"
