@@ -5,18 +5,39 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
+import platform
 
 @st.cache_resource
 def get_driver():
     options = Options()
-    # Uncomment below for background scraping
-    # options.add_argument("--headless=new")
-    options.add_argument("--start-maximized")
+    system = platform.system()
+
+    if system == "Linux":
+        # Streamlit Cloud / Codespaces / Linux
+        options.binary_location = "/usr/bin/chromium-browser"
+        options.add_argument("--headless")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+    else:
+        # Windows/Mac local
+        options.add_argument("--start-maximized")
+
     options.add_argument("--disable-blink-features=AutomationControlled")
-    return webdriver.Chrome(options=options)
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--log-level=3")
+
+    try:
+        service = Service(ChromeDriverManager().install())
+        return webdriver.Chrome(service=service, options=options)
+    except Exception as e:
+        st.error(f"❌ ChromeDriver error: {e}")
+        return None
 
 def load_credentials():
     with open("config.json", "r") as f:
@@ -25,17 +46,9 @@ def load_credentials():
 
 def linkedin_login(driver, email, password):
     driver.get("https://www.linkedin.com/login")
-    WebDriverWait(driver, 15).until(
-        EC.presence_of_element_located((By.ID, "username"))
-    ).send_keys(email)
-
-    WebDriverWait(driver, 15).until(
-        EC.presence_of_element_located((By.ID, "password"))
-    ).send_keys(password)
-
-    WebDriverWait(driver, 15).until(
-        EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']"))
-    ).click()
+    WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, "username"))).send_keys(email)
+    WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, "password"))).send_keys(password)
+    WebDriverWait(driver, 15).until(EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']"))).click()
     time.sleep(3)
 
 def scrape_jobs(driver, company_keyword, max_jobs=50):
@@ -50,7 +63,6 @@ def scrape_jobs(driver, company_keyword, max_jobs=50):
         st.error("❌ Job list did not load.")
         return []
 
-    # Scroll to load more jobs
     for _ in range(5):
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(2)
@@ -91,19 +103,27 @@ if st.button("Fetch Jobs"):
         st.warning("⚠️ Please enter a valid company name.")
         st.stop()
 
+    driver = None
+
     with st.spinner("Logging into LinkedIn..."):
         try:
             email, password = load_credentials()
             driver = get_driver()
+
+            if not driver:
+                st.stop()
+
             linkedin_login(driver, email, password)
         except Exception as e:
             st.error(f"❌ Login failed: {e}")
-            driver.quit()
+            if driver:
+                driver.quit()
             st.stop()
 
     with st.spinner("Scraping job listings..."):
         jobs = scrape_jobs(driver, company_name.strip(), max_jobs=max_jobs)
-        driver.quit()
+        if driver:
+            driver.quit()
 
     if not jobs:
         st.warning("No jobs found for that company.")
