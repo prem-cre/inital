@@ -7,7 +7,7 @@ st.set_page_config(page_title="API Job Scraper", layout="centered")
 st.title("🔍 Scrape Jobs via API")
 
 url_input = st.text_input("Enter job search URL or keyword")
-api_key = "4c88714d39msh83090877ecaffaep1d1466jsna69b2b4484fa"
+api_key = "your-apikey"
 
 headers = {
     "X-RapidAPI-Key": api_key,
