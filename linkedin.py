@@ -84,7 +84,7 @@ st.set_page_config(page_title="LinkedIn Job Scraper", layout="centered")
 st.title("🔍 LinkedIn Job Scraper")
 
 company_name = st.text_input("Enter Company Name (e.g., Google, TCS, Infosys)")
-max_jobs = st.slider("Max Jobs", 5, 50, 10)
+max_jobs = st.slider("Max Jobs", 5, 50, 20)
 
 if st.button("Fetch Jobs"):
     if not company_name.strip():

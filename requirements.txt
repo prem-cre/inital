@@ -1,4 +1,5 @@
 streamlit
-requests
+selenium
+beautifulsoup4
 pandas
-python-dotenv
+webdriver-manager
